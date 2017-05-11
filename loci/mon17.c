@@ -53,6 +53,8 @@ int is_equal(const uint8_t *a, const uint8_t *b)
 static bool mon17_iter(const ipdb *db, ipdb_item *item, uint32_t index)
 {
     static char buf[256];
+    static char area[256];
+
     if(index<db->count)
     {
         mon17_item *ptr = (mon17_item*)(db->buffer + 4 + 256*4);
@@ -74,19 +76,18 @@ static bool mon17_iter(const ipdb *db, ipdb_item *item, uint32_t index)
         *c++ = 0;
         *d++ = 0;
 
+        area[0] = 0;
+
         string list[] = {a, b, c, d};
         int count = array_unique((void*)list, 4, sizeof(string), is_equal);
         int i = 1;
         for (; i < count; i++)
         {
-            if(i==1)
-                strcpy(b, list[i]);
-            else
-                strcat(b, list[i]);
+            strcat(area, list[i]);
         }
 
-        item->zone = a;
-        item->area = b;
+        item->zone = buf;
+        item->area = area;
         return true;
     }
     return false;
