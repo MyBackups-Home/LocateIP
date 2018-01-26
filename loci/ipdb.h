@@ -9,12 +9,14 @@ extern "C" {
 #include <string.h>
 #include <stdlib.h>
 
+#ifndef __cplusplus
 #ifdef __GNUC__
     #include <stdbool.h>
 #else
     #define bool int
     #define true 1
     #define false 0
+#endif
 #endif
 
 #ifndef uint32_t

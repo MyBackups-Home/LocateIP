@@ -1,10 +1,10 @@
 ﻿#include "ipdb.h"
 
 /*
-http://tool.17mon.cn/ipdb.html
+https://www.ipip.net/ip.html
 
-查询更新 http://api.17mon.cn/api.php?a=ipdb
-返回字符串 112.121.182.84|20140501|http://s.qdcdn.com/17mon/17monipdb.dat
+查询更新 https://clientapi.ipip.net/api.php?a=ipdb&lang=CN
+返回字符串 112.121.182.84|2018010100|https://cdn.ipip.net/17mon/17monipdb.dat
 */
 
 static uint32_t swap32(uint32_t n)
@@ -79,7 +79,7 @@ static bool mon17_iter(const ipdb *db, ipdb_item *item, uint32_t index)
         area[0] = 0;
 
         string list[] = {a, b, c, d};
-        int count = array_unique((void*)list, 4, sizeof(string), is_equal);
+        int count = array_unique((uint8_t*)list, 4, sizeof(string), is_equal);
         int i = 1;
         for (; i < count; i++)
         {
