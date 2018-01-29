@@ -39,7 +39,7 @@ struct table_t
 struct table_node_t
 {
 	uint32_t        key;
-	uint32_t        value;
+	intptr_t        value;
 	table_node*     next;
 };
 

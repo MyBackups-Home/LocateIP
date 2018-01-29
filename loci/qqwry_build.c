@@ -12,7 +12,7 @@ static table_value* make_table_value(buffer *buf, table_node *node, uint32_t off
     table_value *node_value = (table_value *)calloc(1, sizeof(table_value));
     node_value->offset = offset;
     node_value->extend = table_create(buf);
-    node->value = (uint32_t)node_value;
+    node->value = (intptr_t)node_value;
     return node_value;
 }
 
