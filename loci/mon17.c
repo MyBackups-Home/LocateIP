@@ -33,7 +33,7 @@ static int array_unique(uint8_t *array, int length, int size, compare_cb cmp)
 		begin += size;
 	}
 
-	return (end - array + size) / size;
+	return (int)(end - array + size) / size;
 }
 
 typedef struct

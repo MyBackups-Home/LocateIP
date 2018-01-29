@@ -127,7 +127,7 @@ uint32_t crc32_mem(uint32_t crc32, const uint8_t* buffer, uint32_t len)
 typedef struct
 {
     uint32_t        hash;
-    char            str[0];
+    char            str[1];
 } table_key;
 
 
@@ -144,7 +144,7 @@ static const table_key* make_table_key(const char* str, size_t len, uint32_t see
 {
     static char buffer[1 << 10];
     table_key *key = (table_key*)buffer;
-    key->hash = (len << 22) | calc_hash(str, len, seed);
+    key->hash = ((uint32_t)len << 22) | calc_hash(str, len, seed);
     memcpy(key->str, str, len * sizeof(char));
     return key;
 }
@@ -156,7 +156,7 @@ static const table_node* make_node(table *t, const table_key* key)
 {
     static table_node node;
     node.key = buffer_size(t->str);
-    buffer_append(t->str, key, sizeof(table_key));
+    buffer_append(t->str, &key->hash, sizeof(uint32_t));
     buffer_append(t->str, key->str, get_name_len(key));
     node.next = 0;
     node.value = 0;
@@ -270,7 +270,7 @@ table* table_create(buffer *buf)
     t->size = 1;
     t->head = (table_node *)calloc(t->size, sizeof(table_node));
     t->idle = t->head + t->size;
-    t->seed = (uint32_t)&t->head;
+    t->seed = (uint32_t)(intptr_t)t->head;
     t->str = buf;
     if(!buffer_size(t->str))
     {

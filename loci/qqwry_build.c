@@ -89,7 +89,7 @@ bool qqwry_build(const ipdb *ctx, const char *file)
                 buffer_append(record_buffer, &zone_value->offset, 3);
 
                 area = table_get_key(string_table, item.area);
-                area_len = strlen(item.area) + 1;
+                area_len = (uint32_t)(strlen(item.area) + 1);
                 if(area_len>2 && area )
                 {
                     area_value = (table_value*)area->value;
@@ -113,7 +113,7 @@ bool qqwry_build(const ipdb *ctx, const char *file)
             zone = table_set_key(string_table, item.zone);
             zone_value = make_table_value(string_buffer, zone, offset);
 
-            zone_len = strlen(item.zone) + 1;
+            zone_len = (uint32_t)(strlen(item.zone) + 1);
             buffer_append(record_buffer, item.zone, zone_len);
 
             node = table_set_key(zone_value->extend, item.area);
@@ -121,7 +121,7 @@ bool qqwry_build(const ipdb *ctx, const char *file)
 
             area = table_get_key(string_table, item.area);
 
-            area_len = strlen(item.area) + 1;
+            area_len = (uint32_t)(strlen(item.area) + 1);
             if(area_len>2 && area)
             {
                 area_value = (table_value*)area->value;

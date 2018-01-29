@@ -34,7 +34,7 @@ static bool unique_init(ipdb * db)
     buffer *record_buffer = buffer_create();
     buffer *string_buffer = buffer_create();
 
-    ipdb_unique_extend *extend = calloc(1, sizeof(ipdb_unique_extend));
+    ipdb_unique_extend *extend = (ipdb_unique_extend *)calloc(1, sizeof(ipdb_unique_extend));
     extend->record_buffer = record_buffer;
     extend->string_buffer = string_buffer;
 
@@ -63,11 +63,11 @@ ipdb* make_unique(const ipdb *ctx)
         ipdb_iter iter = {ctx, 0};
         ipdb_item item;
 
-        uint32_t last_zone = -1;
-        uint32_t last_area = -1;
+        uint32_t last_zone = 0;
+        uint32_t last_area = 0;
         while(ipdb_next(&iter, &item))
         {
-            if (last_zone != -1 &&
+            if (last_area != 0 &&
                 strcmp(item.zone, (char *)buffer_get(extend->string_buffer) + last_zone) == 0 &&
                 strcmp(item.area, (char *)buffer_get(extend->string_buffer) + last_area) == 0)
             {
@@ -76,8 +76,8 @@ ipdb* make_unique(const ipdb *ctx)
             }
             else
             {
-                uint32_t zone = buffer_append(extend->string_buffer, item.zone, strlen(item.zone) + 1);
-                uint32_t area = buffer_append(extend->string_buffer, item.area, strlen(item.area) + 1);
+                uint32_t zone = buffer_append(extend->string_buffer, item.zone, (uint32_t)(strlen(item.zone) + 1));
+                uint32_t area = buffer_append(extend->string_buffer, item.area, (uint32_t)(strlen(item.area) + 1));
 
                 ipdb_unique_item unique_item;
                 unique_item.lower = item.lower;
