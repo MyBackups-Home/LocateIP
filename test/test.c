@@ -9,6 +9,7 @@
 #include "../src/qqwry_build.c"
 #include "../src/patch.c"
 #include "../src/cz_update.c"
+#include "../src/unique.c"
 
 static uint8_t* readfile(const char *path, uint32_t *length)
 {
@@ -75,7 +76,7 @@ static void test_read_ipip()
     if(db)
     {
         ipdb_item item;
-        if( ipdb_find(db, &item, "112.121.182.84") )
+        if( ipdb_find(db, &item, "1.2.4.84") )
         {
             char ip1[16];
             char ip2[16];
@@ -86,7 +87,10 @@ static void test_read_ipip()
         }
 
         printf("%d %d\n", db->count, db->date);
-        ipdb_dump(db, "ipip.txt");
+        ipdb *unidb = make_unique(db);
+        printf("%d %d\n", unidb->count, unidb->date);
+        //ipdb_dump(unidb, "ipip.txt");
+        ipdb_release(unidb);
         ipdb_release(db);
     }
 

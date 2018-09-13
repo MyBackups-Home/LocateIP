@@ -2,9 +2,6 @@
 
 /*
 https://www.ipip.net/ip.html
-
-查询更新 https://clientapi.ipip.net/api.php?a=ipdb&lang=CN
-返回字符串 112.121.182.84|2018010100|https://cdn.ipip.net/17mon/17monipdb.dat
 */
 
 static uint32_t swap32(uint32_t n)
@@ -36,13 +33,17 @@ static int array_unique(uint8_t *array, int length, int size, compare_cb cmp)
 	return (int)(end - array + size) / size;
 }
 
+#pragma pack(push, 1)
 typedef struct
 {
     uint32_t upper;
-    uint32_t offset:24;
-    uint32_t length:8;
+    uint8_t buffer[5];
+    // uint32_t offset:24;
+    // uint32_t length:16;
 } ipip_item;
+#pragma pack(pop)
 
+#define IPIP_ITEM_SIZE 9
 
 typedef char* string;
 int is_equal(const uint8_t *a, const uint8_t *b)
@@ -57,15 +58,19 @@ static bool ipip_iter(const ipdb *db, ipdb_item *item, uint32_t index)
 
     if(index<db->count)
     {
-        ipip_item *ptr = (ipip_item*)(db->buffer + 4 + 256*4);
+        ipip_item *ptr = (ipip_item*)(db->buffer + 4 + 262144);
 
-        const char *text = (const char*)db->buffer + 4 + 256*4 + db->count*8 + ptr[index].offset;
+        uint8_t *buffer = ptr[index].buffer;
+        uint32_t offset = buffer[0] | buffer[1] << 8 | buffer[2] << 16;
+        uint32_t length = buffer[3] << 8 | buffer[4];
+
+        const char *text = (const char*)db->buffer + 4 + 262144 + db->count*IPIP_ITEM_SIZE + offset;
 
         item->lower = index==0?0:(swap32(ptr[index-1].upper)+1);
         item->upper = swap32(ptr[index].upper);
 
-        memcpy(buf, text, ptr[index].length);
-        buf[ptr[index].length] = 0;
+        memcpy(buf, text, length);
+        buf[length] = 0;
 
         string a = buf;
         string b = strchr(a, '\t');
@@ -99,7 +104,7 @@ static bool ipip_find(const ipdb *db, ipdb_item *item, uint32_t ip)
     uint32_t offset = index[ip>>24];
     uint32_t _ip = swap32(ip);
 
-    ipip_item *ptr = (ipip_item*)(db->buffer + 4 + 256*4);
+    ipip_item *ptr = (ipip_item*)(db->buffer + 4 + 262144);
     for(;offset<db->count;offset++)
     {
         if( memcmp(&ptr[offset].upper, &_ip, 4)>=0 )
@@ -112,7 +117,7 @@ static bool ipip_find(const ipdb *db, ipdb_item *item, uint32_t ip)
 
 static bool ipip_init(ipdb* db)
 {
-    if(db->length>=4 && sizeof(ipip_item)==8)
+    if(db->length>=4 && sizeof(ipip_item)==IPIP_ITEM_SIZE)
     {
         uint32_t *pos = (uint32_t*)db->buffer;
         uint32_t index_length = swap32(*pos);
@@ -120,11 +125,11 @@ static bool ipip_init(ipdb* db)
         ipdb_item item;
         uint32_t year = 0, month = 0, day = 0;
 
-        db->count = (index_length - 4 - 256*4 - 1024)/8;
+        db->count = (index_length - 4 - 262144 - 262144)/IPIP_ITEM_SIZE;
 
         if(ipip_iter(db, &item, db->count-1))
         {
-            if( sscanf(item.area, "%4d%2d%2d", &year, &month, &day)!=3 ) /* 17mon数据库 */
+            if( sscanf(item.area, "%4d%2d%2d", &year, &month, &day)!=3 ) /* ipip数据库 */
             {
                 year = 1899, month = 12, day = 30; /* 未知数据库 */
             }
