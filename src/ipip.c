@@ -41,7 +41,7 @@ typedef struct
     uint32_t upper;
     uint32_t offset:24;
     uint32_t length:8;
-} mon17_item;
+} ipip_item;
 
 
 typedef char* string;
@@ -50,14 +50,14 @@ int is_equal(const uint8_t *a, const uint8_t *b)
     return strcmp(*(string*)a, *(string*)b)==0;
 }
 
-static bool mon17_iter(const ipdb *db, ipdb_item *item, uint32_t index)
+static bool ipip_iter(const ipdb *db, ipdb_item *item, uint32_t index)
 {
     static char buf[256];
     static char area[256];
 
     if(index<db->count)
     {
-        mon17_item *ptr = (mon17_item*)(db->buffer + 4 + 256*4);
+        ipip_item *ptr = (ipip_item*)(db->buffer + 4 + 256*4);
 
         const char *text = (const char*)db->buffer + 4 + 256*4 + db->count*8 + ptr[index].offset;
 
@@ -93,13 +93,13 @@ static bool mon17_iter(const ipdb *db, ipdb_item *item, uint32_t index)
     return false;
 }
 
-static bool mon17_find(const ipdb *db, ipdb_item *item, uint32_t ip)
+static bool ipip_find(const ipdb *db, ipdb_item *item, uint32_t ip)
 {
     uint32_t *index = (uint32_t*)(db->buffer + 4);
     uint32_t offset = index[ip>>24];
     uint32_t _ip = swap32(ip);
 
-    mon17_item *ptr = (mon17_item*)(db->buffer + 4 + 256*4);
+    ipip_item *ptr = (ipip_item*)(db->buffer + 4 + 256*4);
     for(;offset<db->count;offset++)
     {
         if( memcmp(&ptr[offset].upper, &_ip, 4)>=0 )
@@ -107,12 +107,12 @@ static bool mon17_find(const ipdb *db, ipdb_item *item, uint32_t ip)
             break;
         }
     }
-    return mon17_iter(db, item, offset);
+    return ipip_iter(db, item, offset);
 }
 
-static bool mon17_init(ipdb* db)
+static bool ipip_init(ipdb* db)
 {
-    if(db->length>=4 && sizeof(mon17_item)==8)
+    if(db->length>=4 && sizeof(ipip_item)==8)
     {
         uint32_t *pos = (uint32_t*)db->buffer;
         uint32_t index_length = swap32(*pos);
@@ -122,7 +122,7 @@ static bool mon17_init(ipdb* db)
 
         db->count = (index_length - 4 - 256*4 - 1024)/8;
 
-        if(mon17_iter(db, &item, db->count-1))
+        if(ipip_iter(db, &item, db->count-1))
         {
             if( sscanf(item.area, "%4d%2d%2d", &year, &month, &day)!=3 ) /* 17mon数据库 */
             {
@@ -134,4 +134,4 @@ static bool mon17_init(ipdb* db)
     return db->count!=0;
 }
 
-const ipdb_handle mon17_handle = {mon17_init, mon17_iter, mon17_find, NULL};
+const ipdb_handle ipip_handle = {ipip_init, ipip_iter, ipip_find, NULL};

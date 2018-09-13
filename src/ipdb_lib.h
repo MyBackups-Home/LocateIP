@@ -3,7 +3,7 @@
 #include "cz_update.h"
 
 extern const ipdb_handle qqwry_handle;
-extern const ipdb_handle mon17_handle;
+extern const ipdb_handle ipip_handle;
 extern const ipdb_handle txtdb_handle;
 
 bool qqwry_build(const ipdb *, const char *);

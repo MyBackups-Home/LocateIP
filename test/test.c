@@ -1,6 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "loci\ipdb_lib.h"
+#include "../src/ipdb_lib.h"
+#include "../src/util.c"
+#include "../src/ipdb.c"
+#include "../src/qqwry.c"
+#include "../src/ipip.c"
+#include "../src/txtdb.c"
+#include "../src/qqwry_build.c"
+#include "../src/patch.c"
+#include "../src/cz_update.c"
 
 static uint8_t* readfile(const char *path, uint32_t *length)
 {
@@ -59,11 +67,11 @@ static void test_read_qqwry()
     if(buffer) free(buffer);
 }
 
-static void test_read_mon17()
+static void test_read_ipip()
 {
     uint32_t length = 0;
-    uint8_t *buffer = readfile("17monipdb.dat", &length);
-    ipdb *db = ipdb_create(&mon17_handle, buffer, length, NULL);
+    uint8_t *buffer = readfile("17monipdb.datx", &length);
+    ipdb *db = ipdb_create(&ipip_handle, buffer, length, NULL);
     if(db)
     {
         ipdb_item item;
@@ -78,7 +86,7 @@ static void test_read_mon17()
         }
 
         printf("%d %d\n", db->count, db->date);
-        ipdb_dump(db, "17mon.txt");
+        ipdb_dump(db, "ipip.txt");
         ipdb_release(db);
     }
 
@@ -116,11 +124,11 @@ static void test_build_qqwry()
     uint8_t *buffer = readfile("qqwry.dat", &length);
     ipdb *db = ipdb_create(&qqwry_handle, buffer, length, NULL);
 
-	if (db)
-	{
-		qqwry_build(db, "qqwry new.dat");
-		ipdb_release(db);
-	}
+    if (db)
+    {
+        qqwry_build(db, "qqwry new.dat");
+        ipdb_release(db);
+    }
 
     if(buffer) free(buffer);
 
@@ -159,12 +167,12 @@ static void test_apply_patch()
     {
         ipdb* db = apply_patch(db1, buffer2, length2);
         if(db)
-		{
-			printf("apply_patch %d\n", db->date);
-			qqwry_build(db, "qqwry patch.dat");
-			ipdb_dump(db, "525 new.txt");
-			ipdb_release(db);
-		}
+        {
+            printf("apply_patch %d\n", db->date);
+            qqwry_build(db, "qqwry patch.dat");
+            ipdb_dump(db, "525 new.txt");
+            ipdb_release(db);
+        }
         ipdb_release(db1);
     }
 
@@ -194,17 +202,51 @@ static void test_cz_update()
     if(buffer1) free(buffer1);
     if(buffer2) free(buffer2);
 }
+
+static void ipip_to_qqwry()
+{
+    uint32_t length = 0;
+    uint8_t *buffer = readfile("17monipdb.datx", &length);
+    ipdb *db = ipdb_create(&ipip_handle, buffer, length, NULL);
+    if(db)
+    {
+        printf("正在转换中\n");
+        qqwry_build(db, "qqwry.dat");
+        printf("转换完成\n");
+        /*
+        ipdb_item item;
+        if( ipdb_find(db, &item, "112.121.182.84") )
+        {
+            char ip1[16];
+            char ip2[16];
+
+            char *ip1_t = ip2str(ip1, sizeof(ip1), item.lower);
+            char *ip2_t = ip2str(ip2, sizeof(ip2), item.upper);
+            printf("%s %s %s %s\n", ip1_t, ip2_t, item.zone, item.area);
+        }
+
+        printf("%d %d\n", db->count, db->date);
+        ipdb_dump(db, "ipip.txt");
+        */
+        ipdb_release(db);
+    }
+    else
+    {
+        printf("打开17monipdb.datx失败\n");
+    }
+
+    if(buffer) free(buffer);
+}
 int main()
 {
-	test_read_mon17();
-	/*
-    test_table();
-    test_read_qqwry();
-    test_build_qqwry();
-    test_build_patch();
-    test_apply_patch();
-    test_read_txt();
-    test_cz_update();
-	*/
+    test_read_ipip();
+    // ipip_to_qqwry();
+    // test_table();
+    // test_read_qqwry();
+    // test_build_qqwry();
+    // test_build_patch();
+    // test_apply_patch();
+    // test_read_txt();
+    // test_cz_update();
     return 0;
 }
