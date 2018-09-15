@@ -4,6 +4,19 @@
 https://www.ipip.net/ip.html
 */
 
+#pragma pack(push, 1)
+typedef struct
+{
+    uint32_t upper;
+    uint8_t buffer[5];
+    // uint32_t offset:24;
+    // uint32_t length:16;
+} ipip_item;
+#pragma pack(pop)
+
+#define IPIP_ITEM_SIZE 9
+#define IPIP_INDEX_SIZE 4*256*256
+
 static uint32_t swap32(uint32_t n)
 {
     return ((n<<24)|((n<<8)&0x00FF0000)|((n>>8)&0x0000FF00)|(n>>24));
@@ -33,18 +46,6 @@ static int array_unique(uint8_t *array, int length, int size, compare_cb cmp)
 	return (int)(end - array + size) / size;
 }
 
-#pragma pack(push, 1)
-typedef struct
-{
-    uint32_t upper;
-    uint8_t buffer[5];
-    // uint32_t offset:24;
-    // uint32_t length:16;
-} ipip_item;
-#pragma pack(pop)
-
-#define IPIP_ITEM_SIZE 9
-
 typedef char* string;
 int is_equal(const uint8_t *a, const uint8_t *b)
 {
@@ -53,18 +54,18 @@ int is_equal(const uint8_t *a, const uint8_t *b)
 
 static bool ipip_iter(const ipdb *db, ipdb_item *item, uint32_t index)
 {
-    static char buf[256];
-    static char area[256];
+    static char buf[1024];
+    static char area[1024];
 
     if(index<db->count)
     {
-        ipip_item *ptr = (ipip_item*)(db->buffer + 4 + 262144);
+        ipip_item *ptr = (ipip_item*)(db->buffer + 4 + IPIP_INDEX_SIZE);
 
         uint8_t *buffer = ptr[index].buffer;
         uint32_t offset = buffer[0] | buffer[1] << 8 | buffer[2] << 16;
-        uint32_t length = buffer[3] << 8 | buffer[4];
+        uint16_t length = buffer[3] << 8 | buffer[4];
 
-        const char *text = (const char*)db->buffer + 4 + 262144 + db->count*IPIP_ITEM_SIZE + offset;
+        const char *text = (const char*)db->buffer + 4 + IPIP_INDEX_SIZE + db->count*IPIP_ITEM_SIZE + offset;
 
         item->lower = index==0?0:(swap32(ptr[index-1].upper)+1);
         item->upper = swap32(ptr[index].upper);
@@ -100,19 +101,18 @@ static bool ipip_iter(const ipdb *db, ipdb_item *item, uint32_t index)
 
 static bool ipip_find(const ipdb *db, ipdb_item *item, uint32_t ip)
 {
-    uint32_t *index = (uint32_t*)(db->buffer + 4);
-    uint32_t offset = index[ip>>24];
-    uint32_t _ip = swap32(ip);
-
-    ipip_item *ptr = (ipip_item*)(db->buffer + 4 + 262144);
-    for(;offset<db->count;offset++)
+    uint32_t low = 0;
+    uint32_t high = db->count;
+    ipip_item *ptr = (ipip_item*)(db->buffer + 4 + IPIP_INDEX_SIZE);
+    while ( low < high )
     {
-        if( memcmp(&ptr[offset].upper, &_ip, 4)>=0 )
-        {
-            break;
-        }
+        uint32_t mid = low + (high - low)/2;
+        if( ip > swap32(ptr[mid].upper) )
+            low = mid + 1;
+        else
+            high = mid;
     }
-    return ipip_iter(db, item, offset);
+    return ipip_iter(db, item, low);
 }
 
 static bool ipip_init(ipdb* db)
@@ -125,7 +125,7 @@ static bool ipip_init(ipdb* db)
         ipdb_item item;
         uint32_t year = 0, month = 0, day = 0;
 
-        db->count = (index_length - 4 - 262144 - 262144)/IPIP_ITEM_SIZE;
+        db->count = (index_length - 4 - IPIP_INDEX_SIZE - IPIP_INDEX_SIZE)/IPIP_ITEM_SIZE;
 
         if(ipip_iter(db, &item, db->count-1))
         {
